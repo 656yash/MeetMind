@@ -408,3 +408,53 @@ export const INITIAL_DIGEST: WeeklyDigest = {
   ],
   handwrittenVerdict: "Fulfillment momentum is rock solid. Postponing the drop to Nov 15 was the right brand quality call—do NOT let marketing rush uninspected coats into customer hands without Sara's stamp."
 }
+
+export interface DemoMeetingPreset {
+  label: string;
+  badge: string;
+  title: string;
+  project: string;
+  date: string;
+  summary: string;
+  transcript: string;
+}
+
+export const DEMO_MEETING_PRESETS: DemoMeetingPreset[] = [
+  {
+    label: "Fabric QA Seam Pull-Test",
+    badge: "Quality QA",
+    title: "Fabric QA Seam Review #43 // Bonded Nylon Pull-Test Protocol",
+    project: "Project Alpha // Winter Apparel Drop",
+    date: "Nov 04, 2026",
+    summary: "QA team ratified mandatory 25kg tensile pull-tests for all heavyweight coat zipper seams using bonded nylon thread.",
+    transcript: `[01:15] Sara Lin: "Batch A zipper seams showed fraying under high load during lab inspection. We must mandate bonded nylon thread with bar-tack reinforcement."
+[03:40] Rahul Mehta: "Agreed. Brand reputation is non-negotiable. All coats exceeding 450 GSM must pass a 25kg pull-test."
+[05:20] Yash Deshmukh: "I will update the production quality checklist and inspect warehouse inventory by Nov 07."
+[06:05] Decision: Ratified bonded nylon seam protocol with 25kg pull-test clearance for all 5,000 units.`,
+  },
+  {
+    label: "Wholesale Consignment Cap",
+    badge: "Inventory",
+    title: "Wholesale Consignment Sync // Nordstrom Pop-up Allocation",
+    project: "Wholesale & Retail Strategy",
+    date: "Nov 05, 2026",
+    summary: "Executive team capped wholesale consignment at 40% (2,000 units) to guarantee online D2C stock for web pre-orders.",
+    transcript: `[02:10] Rahul Mehta: "Nordstrom requested the entire 5,000 unit production run for their flagship department store pop-up shops."
+[04:30] Yash Deshmukh: "If we consign everything wholesale, our online store will sell out in 10 minutes and frustrate our direct-to-consumer buyers."
+[06:00] Priya Sharma: "Agreed. Let's cap wholesale at 40% and reserve 60% of inventory for our own online store."
+[07:15] Decision: Capped wholesale consignment at 40% to preserve direct web pre-orders.`,
+  },
+  {
+    label: "Eco Merino Wool Supplier",
+    badge: "Sourcing",
+    title: "Sustainable Merino Sourcing // New Zealand Ethical Mill Contract",
+    project: "Sustainable Sourcing Initiative",
+    date: "Nov 06, 2026",
+    summary: "Procurement team contracted ethical New Zealand wool mill for 3,000kg of GOTS-certified 17.5-micron merino wool at $18.20/kg.",
+    transcript: `[01:25] Yash Deshmukh: "We compared domestic wool mills against certified ethical farms in New Zealand. Volume pricing is $18.20/kg."
+[03:50] Sara Lin: "The fiber micron count is 17.5, which is exceptionally soft for next-to-skin winter knitwear."
+[05:10] Rahul Mehta: "Decision ratified: Proceed with the 3,000kg merino contract for 2026 knitwear line."
+[06:30] Yash Deshmukh: "I will finalize the purchase order and coordinate customs clearance."`,
+  },
+];
+

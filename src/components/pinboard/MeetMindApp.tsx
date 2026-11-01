@@ -19,6 +19,7 @@ import {
   INITIAL_TASKS,
   INITIAL_DIGEST,
   INITIAL_SPEAKERS,
+  DEMO_MEETING_PRESETS,
 } from "@/data/mockData";
 import { Meeting, Decision, Conflict, TaskItem, WeeklyDigest } from "@/types";
 import { Plus, X, Sparkles, Upload } from "lucide-react";
@@ -197,6 +198,16 @@ export function MeetMindApp() {
   const [newMeetingDate, setNewMeetingDate] = useState("Nov 03, 2026");
   const [newMeetingSummary, setNewMeetingSummary] = useState("");
   const [newMeetingTranscript, setNewMeetingTranscript] = useState("");
+
+  const handleLoadMeetingPreset = (index: number) => {
+    const preset = DEMO_MEETING_PRESETS[index];
+    if (!preset) return;
+    setNewMeetingTitle(preset.title);
+    setNewMeetingProject(preset.project);
+    setNewMeetingDate(preset.date);
+    setNewMeetingSummary(preset.summary);
+    setNewMeetingTranscript(preset.transcript);
+  };
 
   const [isProcessingAi, setIsProcessingAi] = useState(false);
 
@@ -758,6 +769,41 @@ export function MeetMindApp() {
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Quick Demo Data Options */}
+            <div className="p-3 bg-[#072417] border border-[#2d5f44] rounded-lg space-y-2 text-stone-100 shadow-inner">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-display font-bold text-white">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Fill Demo Data</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleLoadMeetingPreset(0)}
+                  className="px-2.5 py-1 bg-[#ffea55] hover:bg-amber-300 text-stone-950 font-mono-code font-bold text-[11px] rounded shadow-xs cursor-pointer transition-transform active:scale-95"
+                >
+                  ⚡ Auto-fill Preset #1
+                </button>
+              </div>
+              <p className="text-[11px] text-stone-300 leading-tight">
+                Click any scenario below to pre-populate realistic transcripts & decisions:
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {DEMO_MEETING_PRESETS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleLoadMeetingPreset(idx)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-[#0b3320] hover:bg-[#134930] text-emerald-200 border border-[#2d5f44] rounded-md text-[11px] font-sans font-medium cursor-pointer transition-colors"
+                  >
+                    <span className="text-[9px] font-mono-code font-bold text-amber-300 uppercase px-1 py-0.2 bg-black/40 rounded">
+                      {preset.badge}
+                    </span>
+                    <span>{preset.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-3">

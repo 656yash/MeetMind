@@ -41,7 +41,7 @@ import {
   runMeetingIntelligenceExtraction,
   ExtractedIntelligence,
 } from "@/services/groqService";
-import { INITIAL_SPEAKERS } from "@/data/mockData";
+import { INITIAL_SPEAKERS, DEMO_MEETING_PRESETS } from "@/data/mockData";
 
 // Integration Tracker SVGs matching the target mockup
 const TrelloLogo = () => (
@@ -163,8 +163,18 @@ export const MeetingsPinboard: React.FC<Props> = ({
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState("Nov 03, 2026");
+  const [newSummary, setNewSummary] = useState("");
   const [newTranscript, setNewTranscript] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
+
+  const handleLoadPreset = (index: number) => {
+    const preset = DEMO_MEETING_PRESETS[index];
+    if (!preset) return;
+    setNewTitle(preset.title);
+    setNewDate(preset.date);
+    setNewSummary(preset.summary);
+    setNewTranscript(preset.transcript);
+  };
 
   const activeMeeting =
     meetings.find((m) => m.id === activeMeetingId) || meetings[0];
@@ -407,14 +417,29 @@ export const MeetingsPinboard: React.FC<Props> = ({
             })}
           </div>
 
-          {/* + New Meeting Button */}
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-[#072417] hover:bg-[#0c3120] text-stone-200 border border-[#2d5f44] font-mono-code font-bold text-xs px-3.5 py-2 rounded-md flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
-          >
-            <Plus className="w-3.5 h-3.5 text-emerald-400" />
-            <span>New Meeting</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const preset = DEMO_MEETING_PRESETS[0];
+                onAddMeeting(preset.title, preset.summary, preset.transcript);
+              }}
+              className="bg-[#0b3320] hover:bg-[#134930] text-emerald-300 border border-[#2d5f44] font-mono-code font-bold text-xs px-3 py-2 rounded-md flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+              title="Instantly add and pin a sample apparel QA meeting"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>+ Add Demo Meeting</span>
+            </button>
+
+            {/* + New Meeting Button */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-[#072417] hover:bg-[#0c3120] text-stone-200 border border-[#2d5f44] font-mono-code font-bold text-xs px-3.5 py-2 rounded-md flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-400" />
+              <span>New Meeting</span>
+            </button>
+          </div>
         </div>
 
         {/* ========================================================= */}
@@ -1043,6 +1068,41 @@ export const MeetingsPinboard: React.FC<Props> = ({
               </button>
             </div>
 
+            {/* Quick Demo Data Options */}
+            <div className="p-3 bg-[#072417] border border-[#2d5f44] rounded-lg space-y-2 text-stone-100 shadow-inner">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-display font-bold text-white">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Fill Demo Data</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleLoadPreset(0)}
+                  className="px-2.5 py-1 bg-[#ffea55] hover:bg-amber-300 text-stone-950 font-mono-code font-bold text-[11px] rounded shadow-xs cursor-pointer transition-transform active:scale-95"
+                >
+                  ⚡ Auto-fill Preset #1
+                </button>
+              </div>
+              <p className="text-[11px] text-stone-300 leading-tight">
+                Click any apparel meeting scenario to instantly pre-fill realistic transcripts & decisions:
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {DEMO_MEETING_PRESETS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleLoadPreset(idx)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-[#0b3320] hover:bg-[#134930] text-emerald-200 border border-[#2d5f44] rounded-md text-[11px] font-sans font-medium cursor-pointer transition-colors"
+                  >
+                    <span className="text-[9px] font-mono-code font-bold text-amber-300 uppercase px-1 py-0.2 bg-black/40 rounded">
+                      {preset.badge}
+                    </span>
+                    <span>{preset.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-mono-code font-bold uppercase text-stone-700 mb-1">
@@ -1054,6 +1114,19 @@ export const MeetingsPinboard: React.FC<Props> = ({
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded text-sm font-sans focus:outline-none focus:border-stone-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono-code font-bold uppercase text-stone-700 mb-1">
+                  Meeting Summary
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Brief summary of what was discussed..."
+                  value={newSummary}
+                  onChange={(e) => setNewSummary(e.target.value)}
+                  className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded text-xs font-sans focus:outline-none focus:border-stone-900"
                 />
               </div>
 
@@ -1080,7 +1153,12 @@ export const MeetingsPinboard: React.FC<Props> = ({
 
             <div className="flex justify-end gap-2 pt-3 border-t border-stone-200">
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setNewTitle("");
+                  setNewSummary("");
+                  setNewTranscript("");
+                }}
                 className="px-4 py-2 font-mono-code text-xs text-stone-600 hover:text-stone-900 cursor-pointer"
               >
                 Cancel
@@ -1089,12 +1167,13 @@ export const MeetingsPinboard: React.FC<Props> = ({
                 onClick={() => {
                   if (newTitle.trim()) {
                     onAddMeeting(
-                      newTitle,
-                      "Ingested apparel meeting transcript.",
-                      newTranscript || "Aligned on collection deliverables."
+                      newTitle.trim(),
+                      newSummary.trim() || "Ingested apparel meeting transcript.",
+                      newTranscript.trim() || "Aligned on collection deliverables."
                     );
                     setShowAddModal(false);
                     setNewTitle("");
+                    setNewSummary("");
                     setNewTranscript("");
                   }
                 }}
