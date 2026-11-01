@@ -29,6 +29,7 @@ import {
   Link as LinkIcon,
   Send,
   Info,
+  Trash2,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -101,6 +102,7 @@ interface Props {
   meetings: Meeting[];
   activeMeetingId: string;
   onSelectMeeting: (id: string) => void;
+  onDeleteMeeting?: (id: string) => void;
   onAddMeeting: (title: string, summary: string, transcriptText: string) => void;
   onAddIngestedMeeting?: (
     newMeeting: Meeting,
@@ -126,6 +128,7 @@ export const MeetingsPinboard: React.FC<Props> = ({
   meetings,
   activeMeetingId,
   onSelectMeeting,
+  onDeleteMeeting,
   onAddMeeting,
   onAddIngestedMeeting,
   decisions = [],
@@ -400,22 +403,37 @@ export const MeetingsPinboard: React.FC<Props> = ({
                 const shortTitle = m.title.length > 22 ? m.title.slice(0, 20) + "..." : m.title;
                 label = `${shortTitle} (${m.date || "New"})`;
               }
+              const isCustom = m.id !== "meet-01" && m.id !== "meet-02" && m.id !== "meet-03";
               return (
-                <button
-                  key={m.id}
-                  onClick={() => onSelectMeeting(m.id)}
-                  className={`px-4 py-2 rounded-md font-display font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm ${
-                    isSelected
-                      ? "bg-[#ffea55] text-stone-950 scale-102 ring-1 ring-amber-400"
-                      : "bg-white text-stone-800 hover:bg-stone-50 border border-stone-300"
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{label}</span>
-                </button>
-              );
-            })}
-          </div>
+                  <button
+                    key={m.id}
+                    onClick={() => onSelectMeeting(m.id)}
+                    className={`px-3.5 py-2 rounded-md font-display font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm ${
+                      isSelected
+                        ? "bg-[#ffea55] text-stone-950 scale-102 ring-1 ring-amber-400"
+                        : "bg-white text-stone-800 hover:bg-stone-50 border border-stone-300"
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5 shrink-0" />
+                    <span>{label}</span>
+                    {isCustom && onDeleteMeeting && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteMeeting(m.id);
+                        }}
+                        className="ml-1 p-0.5 rounded-full hover:bg-stone-300/80 text-stone-400 hover:text-rose-600 transition-colors"
+                        title="Remove meeting from database and UI"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
@@ -464,10 +482,22 @@ export const MeetingsPinboard: React.FC<Props> = ({
               <Tape position="top-right" angle="2deg" width="w-20" />
 
               {/* Metadata row */}
-              <div className="flex items-center gap-2 text-[11px] font-mono-code text-stone-500 mb-1">
-                <span>{activeMeeting.date}</span>
-                <span>·</span>
-                <span>{activeMeeting.duration}</span>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2 text-[11px] font-mono-code text-stone-500">
+                  <span>{activeMeeting.date}</span>
+                  <span>·</span>
+                  <span>{activeMeeting.duration}</span>
+                </div>
+                {onDeleteMeeting && activeMeeting.id !== "meet-01" && activeMeeting.id !== "meet-02" && activeMeeting.id !== "meet-03" && (
+                  <button
+                    onClick={() => onDeleteMeeting(activeMeeting.id)}
+                    className="text-stone-400 hover:text-rose-600 text-[11px] font-mono-code flex items-center gap-1 hover:underline cursor-pointer"
+                    title="Remove this meeting from database and UI"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
 
               {/* Meeting Title */}

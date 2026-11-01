@@ -37,6 +37,8 @@ import {
   updateTaskInDb,
   resolveConflictInDb,
   batchSaveIngestedMeeting,
+  deleteMeetingFromDb,
+  removeTestMeetingsFromDb,
 } from "@/services/firebaseService";
 
 export function MeetMindApp() {
@@ -81,7 +83,13 @@ export function MeetMindApp() {
         if (storedMeetings) {
           const parsed = JSON.parse(storedMeetings);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setMeetings(parsed);
+            const cleaned = parsed.filter((m: Meeting) => {
+              const title = (m.title || "").toLowerCase();
+              return !title.includes("fabric qa") && !title.includes("pull-test") && !title.includes("seam review") && !title.includes("testing");
+            });
+            const finalMeetings = cleaned.length > 0 ? cleaned : INITIAL_MEETINGS;
+            setMeetings(finalMeetings);
+            localStorage.setItem("meetmind_meetings", JSON.stringify(finalMeetings));
           }
         }
 
@@ -101,7 +109,12 @@ export function MeetMindApp() {
         if (storedTasks) {
           const parsed = JSON.parse(storedTasks);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setTasks(parsed);
+            const cleaned = parsed.filter((t: TaskItem) => {
+              const text = `${t.sourceMeeting || ""} ${t.title || ""}`.toLowerCase();
+              return !text.includes("fabric qa") && !text.includes("pull-test");
+            });
+            setTasks(cleaned);
+            localStorage.setItem("meetmind_tasks", JSON.stringify(cleaned));
           }
         }
 
@@ -109,23 +122,51 @@ export function MeetMindApp() {
         if (storedDecisions) {
           const parsed = JSON.parse(storedDecisions);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setDecisions(parsed);
+            const cleaned = parsed.filter((d: Decision) => {
+              const text = `${d.sourceMeetingTitle || ""} ${d.title || ""}`.toLowerCase();
+              return !(text.includes("fabric qa") && d.id !== "dec-1");
+            });
+            setDecisions(cleaned);
+            localStorage.setItem("meetmind_decisions", JSON.stringify(cleaned));
           }
         }
       }
     } catch {}
 
-    // 1. Seed initial data to Firestore if database is empty
+    // 1. Purge unwanted test meetings from Firestore DB
+    removeTestMeetingsFromDb().catch((err) => {
+      console.warn("[Firebase] Cleanup test meetings error:", err);
+    });
+
+    // 2. Reset active meeting to meet-01 if it was one of the removed meetings
+    setActiveMeetingId((currentId) => {
+      if (currentId && (currentId.toLowerCase().includes("fabric") || currentId.toLowerCase().includes("qa"))) {
+        return "meet-01";
+      }
+      return currentId || "meet-01";
+    });
+
+    // 3. Seed initial data to Firestore if database is empty
     seedFirestoreIfEmpty().catch((err) => {
       console.warn("[Firebase] Initial database check notice:", err);
     });
 
-    // 2. Attach real-time listeners for all MeetMind collections
+    // 4. Attach real-time listeners for all MeetMind collections
     const unsubMeetings = subscribeToMeetings((liveMeetings) => {
       if (liveMeetings && liveMeetings.length > 0) {
+        // Filter out any lingering Fabric QA test meetings
+        const filteredLive = liveMeetings.filter((m) => {
+          const title = (m.title || "").toLowerCase();
+          return !title.includes("fabric qa") && !title.includes("pull-test") && !title.includes("seam review") && !title.includes("testing");
+        });
+
         setMeetings((prev) => {
-          const map = new Map(liveMeetings.map((m) => [m.id, m]));
-          prev.forEach((localM) => {
+          const cleanPrev = prev.filter((m) => {
+            const title = (m.title || "").toLowerCase();
+            return !title.includes("fabric qa") && !title.includes("pull-test") && !title.includes("seam review") && !title.includes("testing");
+          });
+          const map = new Map(filteredLive.map((m) => [m.id, m]));
+          cleanPrev.forEach((localM) => {
             if (!map.has(localM.id)) {
               map.set(localM.id, localM);
             }
@@ -136,7 +177,7 @@ export function MeetMindApp() {
               localStorage.setItem("meetmind_meetings", JSON.stringify(merged));
             }
           } catch {}
-          return merged;
+          return merged.length > 0 ? merged : INITIAL_MEETINGS;
         });
       }
     });
@@ -548,6 +589,31 @@ export function MeetMindApp() {
     }, 600);
   };
 
+  const handleDeleteMeeting = async (meetingId: string) => {
+    // 1. Remove from state
+    setMeetings((prev) => {
+      const updated = prev.filter((m) => m.id !== meetingId);
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("meetmind_meetings", JSON.stringify(updated.length > 0 ? updated : INITIAL_MEETINGS));
+        }
+      } catch {}
+      return updated.length > 0 ? updated : INITIAL_MEETINGS;
+    });
+
+    // 2. Reset active meeting if deleted
+    if (activeMeetingId === meetingId) {
+      setActiveMeetingId("meet-01");
+    }
+
+    // 3. Delete from Firebase Firestore
+    try {
+      await deleteMeetingFromDb(meetingId);
+    } catch (err) {
+      console.warn("[Firebase] Failed to delete meeting from DB:", err);
+    }
+  };
+
   const activeConflictsCount = conflicts.filter((c) => c.status === "active").length;
 
   const handleStartLoadingWorkspace = (guest: boolean = false) => {
@@ -633,6 +699,7 @@ export function MeetMindApp() {
             meetings={meetings}
             activeMeetingId={activeMeetingId}
             onSelectMeeting={setActiveMeetingId}
+            onDeleteMeeting={handleDeleteMeeting}
             onAddMeeting={(title, summary, transcript) => {
               handleSaveNewMeeting(title, summary, transcript);
             }}

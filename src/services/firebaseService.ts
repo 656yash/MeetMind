@@ -8,6 +8,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   writeBatch,
   Unsubscribe,
@@ -279,6 +280,73 @@ export async function saveMeetingToDb(meeting: Meeting): Promise<void> {
     console.log(`[Firebase] Saved meeting ${meeting.id} to Firestore.`);
   } catch (err) {
     console.warn(`[Firebase] Failed to save meeting ${meeting.id}:`, err);
+  }
+}
+
+/**
+ * Delete a meeting from Firestore and any linked decisions/tasks.
+ */
+export async function deleteMeetingFromDb(meetingId: string): Promise<void> {
+  try {
+    const ref = doc(db, COLLECTIONS.MEETINGS, meetingId);
+    await deleteDoc(ref);
+    console.log(`[Firebase] Deleted meeting ${meetingId} from Firestore.`);
+  } catch (err) {
+    console.warn(`[Firebase] Failed to delete meeting ${meetingId}:`, err);
+  }
+}
+
+/**
+ * Remove test / unwanted meetings (such as Fabric QA Seam Review) from Firestore
+ */
+export async function removeTestMeetingsFromDb(): Promise<void> {
+  try {
+    const colRef = collection(db, COLLECTIONS.MEETINGS);
+    const snap = await getDocs(colRef);
+    const batch = writeBatch(db);
+    let count = 0;
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() as Meeting;
+      const titleLower = (data.title || "").toLowerCase();
+      if (
+        data.id !== "meet-01" &&
+        data.id !== "meet-02" &&
+        data.id !== "meet-03" &&
+        (titleLower.includes("fabric qa") ||
+         titleLower.includes("seam review") ||
+         titleLower.includes("pull-test"))
+      ) {
+        batch.delete(docSnap.ref);
+        count++;
+      }
+    });
+
+    if (count > 0) {
+      await batch.commit();
+      console.log(`[Firebase] Deleted ${count} test meetings from Firestore.`);
+    }
+
+    // Also clean up linked decisions
+    const decSnap = await getDocs(collection(db, COLLECTIONS.DECISIONS));
+    decSnap.forEach((d) => {
+      const data = d.data() as Decision;
+      const text = `${data.sourceMeetingTitle || ""} ${data.title || ""}`.toLowerCase();
+      if (text.includes("fabric qa") && !data.id.startsWith("dec-1") && data.id !== "dec-1") {
+        deleteDoc(d.ref).catch(() => {});
+      }
+    });
+
+    // Also clean up linked tasks
+    const taskSnap = await getDocs(collection(db, COLLECTIONS.TASKS));
+    taskSnap.forEach((t) => {
+      const data = t.data() as TaskItem;
+      const text = `${data.sourceMeeting || ""} ${data.title || ""}`.toLowerCase();
+      if (text.includes("fabric qa") || text.includes("pull-test")) {
+        deleteDoc(t.ref).catch(() => {});
+      }
+    });
+  } catch (err) {
+    console.warn("[Firebase] Error removing test meetings:", err);
   }
 }
 
